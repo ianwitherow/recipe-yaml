@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
 import { TextInput, Textarea, Checkbox, Button, Group, Box, Grid, Code, CopyButton, Text } from '@mantine/core';
 import { IconCopy, IconFileDownload, IconClearAll, IconMeat } from '@tabler/icons';
 import { useForm } from '@mantine/form';
@@ -33,7 +31,6 @@ function App() {
 	}
 
 	const save = () => {
-		console.log(form);
 		const yamlData = new Blob([yaml], { type: 'text/yaml' });
 
 		let a = document.createElement('a');
@@ -43,8 +40,7 @@ function App() {
 	}
 
 	const createYaml = values => {
-		console.log(values);
-		const thatYaml = `name: ${values.title}
+		let thatYaml = `name: ${values.title}
 ${values.notes && `notes: |
 ${values.notes.split('\n').map(l => ' ' + l).join('\n')}`}
 ${values.servings && `servings: ${values.servings}`}
@@ -62,6 +58,8 @@ ${values.ingredients.split('\n').map(l => ' ' + l).join('\n')}
 directions: |
 ${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
 
+		thatYaml = thatYaml.replace(/\n\n+/g, '\n\n');
+
 		setYaml(thatYaml);
 		window.scrollTo(0, 0);
 	}
@@ -75,35 +73,30 @@ ${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
 							<TextInput
 								withAsterisk
 								label="Title"
-								placeholder="Recipe Title"
 								{...form.getInputProps('title')}
 							/>
 							<Grid>
 								<Grid.Col span={4}>
 									<TextInput
 										label="Servings"
-										placeholder=""
 										{...form.getInputProps('servings')}
 									/>
 								</Grid.Col>
 								<Grid.Col span={2}>
 									<TextInput
 										label="Prep Time"
-										placeholder=""
 										{...form.getInputProps('prep_time')}
 									/>
 								</Grid.Col>
 								<Grid.Col span={2}>
 									<TextInput
 										label="Cook Time"
-										placeholder=""
 										{...form.getInputProps('cook_time')}
 									/>
 								</Grid.Col>
 								<Grid.Col span={2}>
 									<TextInput
 										label="Total Time"
-										placeholder=""
 										{...form.getInputProps('total_time')}
 									/>
 								</Grid.Col>
@@ -112,45 +105,42 @@ ${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
 								<Grid.Col span={4}>
 									<TextInput
 										label="Category"
-										placeholder=""
+										placeholder="E.g., 'Weeknight', 'Pasta', etc"
 										{...form.getInputProps('categories')}
 									/>
 								</Grid.Col>
 								<Grid.Col span={4}>
 									<TextInput
 										label="Difficulty"
-										placeholder=""
 										{...form.getInputProps('difficulty')}
 									/>
 								</Grid.Col>
 							</Grid>
 							<TextInput
 								label="Source"
-								placeholder=""
+								placeholder="E.g., Serious Eats"
 								{...form.getInputProps('source')}
 							/>
 							<TextInput
 								label="Source URL"
-								placeholder=""
+								placeholder="E.g., https://seriouseats.com/recipes/chickn"
 								{...form.getInputProps('source_url')}
 							/>
 							<Textarea
 								label="Photo"
-								placeholder=""
+								placeholder="Base64 encoded string"
 								{...form.getInputProps('photo')}
 							/>
 							<Textarea
 								withAsterisk
 								label="Ingredients"
 								autosize
-								placeholder=""
 								{...form.getInputProps('ingredients')}
 							/>
 							<Textarea
 								withAsterisk
 								label="Directions"
 								autosize
-								placeholder=""
 								{...form.getInputProps('directions')}
 							/>
 							<Textarea
