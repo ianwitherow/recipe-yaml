@@ -1,15 +1,30 @@
-import { useState } from 'react'
-import { TextInput, Textarea, Checkbox, Button, Group, Box, Grid, Code, CopyButton, Text } from '@mantine/core';
+import { useState, useEffect } from 'react'
+import {
+	TextInput,
+	Textarea,
+	Checkbox,
+	Button,
+	Group,
+	Box,
+	Grid,
+	Code,
+	CopyButton,
+	Text,
+	FileInput
+} from '@mantine/core';
 import { IconCopy, IconFileDownload, IconClearAll, IconMeat } from '@tabler/icons';
 import { useForm } from '@mantine/form';
 
 function App() {
 
 	const [yaml, setYaml] = useState(null);
+	const [yamlDisplay, setYamlDisplay] = useState(null);
+	const [imageBase64, setImageBase64] = useState(null);
+
 
 	const form = useForm({
 		initialValues: {
-			title: '',
+			name: '',
 			notes: '',
 			servings: '',
 			prep_time: '',
@@ -35,34 +50,78 @@ function App() {
 
 		let a = document.createElement('a');
 		a.href = URL.createObjectURL(yamlData);
-		a.download = form.values.title + '.yml';
+		a.download = form.values.name + '.yml';
 		a.click();
 	}
 
+
+
 	const createYaml = values => {
-		let thatYaml = `name: ${values.title}
-${values.notes && `notes: |
-${values.notes.split('\n').map(l => ' ' + l).join('\n')}`}
-${values.servings && `servings: ${values.servings}`}
-${values.prep_time && `prep_time: ${values.prep_time}`}
-${values.cook_time && `cook_time: ${values.cook_time}`}
-${values.total_time && `total_time: ${values.total_time}`}
-${values.source && `source: ${values.source}`}
-${values.source_url && `source_url: ${values.source_url}`}
-${values.photo && `photo: ${values.photo.replace('data:image/jpeg;base64,', '')}`}
-${values.categories && `categories: [${values.categories}]`}
-${values.difficulty && `difficulty: ${values.difficulty}`}
-ingredients: |
-${values.ingredients.split('\n').map(l => ' ' + l).join('\n')}
+		console.log(values);
+		const isBlank = Object.keys(values).every(k => values[k] == '' || values[k] == null);
+		if (isBlank) {
+			setYaml(null);
+			return;
+		}
 
-directions: |
-${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
+		const yamlLines = Object.keys(values)
+			.map(key => toYaml(key, values[key]))
+			.filter(Boolean);
 
-		thatYaml = thatYaml.replace(/\n\n+/g, '\n\n');
+		const yamlDisplay = Object.keys(values)
+			.map(key => toYaml(key, values[key], true))
+			.filter(Boolean);
 
-		setYaml(thatYaml);
+		setYaml(yamlLines.join('\n'));
+		setYamlDisplay(yamlDisplay.join('\n'));
+
 		window.scrollTo(0, 0);
 	}
+
+	function toYaml(key, value, forDisplay = false) {
+		if (value == null || value.length === 0) return null;
+		const multiline = ['ingredients', 'directions', 'notes'];
+		const arrayValue = ['categories'];
+
+		if (multiline.includes(key)) {
+			return `${key}: |\n${value.split('\n').map(l => ' ' + l).join('\n')}`;
+		}
+
+		if (arrayValue.includes(key)) {
+			return `${key}: [${value}]`;
+		}
+
+		// There's only one binary/photo thing, just gonna hard code it.
+		if (key === 'photo') {
+			value = forDisplay ? "[binary]" : imageBase64;
+		}
+
+		return `${key}: ${value}`;
+	}
+
+
+	function imageToBase64(file) {
+		const reader = new FileReader();
+		return reader.readAsDataURL(file);
+	}
+
+	useEffect(() => {
+		let newBase64Str = null;
+
+		if (form.values.photo) {
+			let fr = new FileReader();
+
+			fr.onload = () => setImageBase64(fr.result.replace(/^data:image\/.*?base64,/, ''));
+			fr.readAsDataURL(form.values.photo);
+		} else {
+			setImageBase64(null);
+		}
+
+	}, [form.values.photo]);
+
+	useEffect(() => {
+		createYaml(form.values);
+	}, [form.values, imageBase64]);
 
 	return (
 		<div className="container mx-auto">
@@ -73,7 +132,7 @@ ${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
 							<TextInput
 								withAsterisk
 								label="Title"
-								{...form.getInputProps('title')}
+								{...form.getInputProps('name')}
 							/>
 							<Grid>
 								<Grid.Col span={4}>
@@ -126,11 +185,18 @@ ${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
 								placeholder="E.g., https://seriouseats.com/recipes/chickn"
 								{...form.getInputProps('source_url')}
 							/>
-							<Textarea
-								label="Photo"
-								placeholder="Base64 encoded string"
+							<FileInput
 								{...form.getInputProps('photo')}
+								label="Photo"
+								placeholder="Pick file"
 							/>
+							{form.values.photo && (
+								<>
+									<Button variant="subtle" onClick={() => { form.values.photo = null; setImageBase64(null); }}>Clear</Button>
+									<br />
+									<img src={URL.createObjectURL(form.values.photo)} style={{ maxWidth: '200px' }} />
+								</>
+							)}
 							<Textarea
 								withAsterisk
 								label="Ingredients"
@@ -183,7 +249,7 @@ ${values.directions.split('\n').map(l => ' ' + l).join('\n')}`;
 										</Grid.Col>
 									</Grid>
 									<Code block>
-										{yaml}
+										{yamlDisplay}
 									</Code>
 								</>
 							)
